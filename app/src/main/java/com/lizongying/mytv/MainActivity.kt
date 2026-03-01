@@ -54,17 +54,21 @@ class MainActivity : FragmentActivity(), Request.RequestListener {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        Log.i(TAG, "onCreate")
+        Log.i(TAG, "onCreate start")
         super.onCreate(savedInstanceState)
 
+        Log.i(TAG, "setContentView")
         setContentView(R.layout.activity_main)
 
+        Log.i(TAG, "setRequestListener")
         Request.setRequestListener(this)
 
+        Log.i(TAG, "add window flags")
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
         window.decorView.systemUiVisibility = SYSTEM_UI_FLAG_HIDE_NAVIGATION
 
+        Log.i(TAG, "add fragments")
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
                 .add(R.id.main_browse_fragment, playerFragment)
@@ -75,14 +79,17 @@ class MainActivity : FragmentActivity(), Request.RequestListener {
                 .hide(mainFragment)
                 .commit()
         }
+        Log.i(TAG, "init gestureDetector")
         gestureDetector = GestureDetector(this, GestureListener())
 
+        Log.i(TAG, "set errorFragment buttonClickListener")
         errorFragment.buttonClickListener = View.OnClickListener {
             supportFragmentManager.beginTransaction()
                 .remove(errorFragment)
                 .commit()
         }
 
+        Log.i(TAG, "check network")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             val connectivityManager =
                 getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -102,6 +109,7 @@ class MainActivity : FragmentActivity(), Request.RequestListener {
             ready++
         }
 
+        Log.i(TAG, "onCreate end")
     }
 
     fun showInfoFragment(tvViewModel: TVViewModel) {
@@ -255,24 +263,11 @@ class MainActivity : FragmentActivity(), Request.RequestListener {
             if (velocityY > 0) {
                 if (mainFragment.isHidden) {
                     prev()
-                } else {
-//                    if (mainFragment.selectedPosition == 0) {
-//                        mainFragment.setSelectedPosition(
-//                            mainFragment.tvListViewModel.maxNum.size - 1,
-//                            false
-//                        )
-//                    }
                 }
             }
             if (velocityY < 0) {
                 if (mainFragment.isHidden) {
                     next()
-                } else {
-//                    if (mainFragment.selectedPosition == mainFragment.tvListViewModel.maxNum.size - 1) {
-////                        mainFragment.setSelectedPosition(0, false)
-//                        hideMainFragment()
-//                        return false
-//                    }
                 }
             }
             return super.onFling(e1, e2, velocityX, velocityY)

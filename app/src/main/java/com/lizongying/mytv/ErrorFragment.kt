@@ -8,17 +8,17 @@ class ErrorFragment : ErrorSupportFragment() {
 
     internal fun setErrorContent(message: String) {
         imageDrawable =
-            ContextCompat.getDrawable(context!!, androidx.leanback.R.drawable.lb_ic_sad_cloud)
+            ContextCompat.getDrawable(requireContext(), androidx.leanback.R.drawable.lb_ic_sad_cloud)
         this.message = message
         setDefaultBackground(TRANSLUCENT)
         backgroundDrawable = ContextCompat.getDrawable(
-            context!!,
+            requireContext(),
             R.color.black
         )
 
         buttonText = resources.getString(R.string.dismiss_error)
         buttonClickListener = View.OnClickListener {
-            fragmentManager!!.beginTransaction().remove(this@ErrorFragment).commit()
+            parentFragmentManager.beginTransaction().remove(this@ErrorFragment).commit()
         }
     }
 

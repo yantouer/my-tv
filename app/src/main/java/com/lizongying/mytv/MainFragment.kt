@@ -70,62 +70,98 @@ class MainFragment : BrowseSupportFragment() {
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
+        Log.i(TAG, "onActivityCreated start")
         super.onActivityCreated(savedInstanceState)
 
-        activity?.let { YSP.init(it) }
-
-        loadRows()
-
-        setupEventListeners()
-
-        tvListViewModel.tvListViewModel.value?.forEach { tvViewModel ->
-            tvViewModel.errInfo.observe(viewLifecycleOwner) { _ ->
-                if (tvViewModel.errInfo.value != null
-                    && tvViewModel.getTV().id == itemPosition
-                ) {
-                    Toast.makeText(context, tvViewModel.errInfo.value, Toast.LENGTH_SHORT).show()
-                }
+        Log.i(TAG, "init YSP")
+        try {
+            activity?.let { 
+                Log.i(TAG, "call YSP.init")
+                YSP.init(it)
+                Log.i(TAG, "YSP.init success")
             }
-            tvViewModel.ready.observe(viewLifecycleOwner) { _ ->
+        } catch (e: Exception) {
+            Log.e(TAG, "YSP.init error: ${e.message}", e)
+        }
 
-                // not first time && channel not change
-                if (tvViewModel.ready.value != null
-                    && tvViewModel.getTV().id == itemPosition
-                    && check(tvViewModel)
-                ) {
-                    Log.i(TAG, "ready ${tvViewModel.getTV().title}")
-                    (activity as? MainActivity)?.play(tvViewModel)
+        Log.i(TAG, "loadRows")
+        try {
+            loadRows()
+            Log.i(TAG, "loadRows success")
+        } catch (e: Exception) {
+            Log.e(TAG, "loadRows error: ${e.message}", e)
+        }
+
+        Log.i(TAG, "setupEventListeners")
+        try {
+            setupEventListeners()
+            Log.i(TAG, "setupEventListeners success")
+        } catch (e: Exception) {
+            Log.e(TAG, "setupEventListeners error: ${e.message}", e)
+        }
+
+        Log.i(TAG, "observe tvListViewModel")
+        try {
+            tvListViewModel.tvListViewModel.value?.forEach { tvViewModel ->
+                tvViewModel.errInfo.observe(viewLifecycleOwner) { _ ->
+                    if (tvViewModel.errInfo.value != null
+                        && tvViewModel.getTV().id == itemPosition
+                    ) {
+                        Toast.makeText(context, tvViewModel.errInfo.value, Toast.LENGTH_SHORT).show()
+                    }
                 }
-            }
-            tvViewModel.change.observe(viewLifecycleOwner) { _ ->
-                if (tvViewModel.change.value != null) {
-                    val title = tvViewModel.getTV().title
-                    Log.i(TAG, "switch $title")
-                    if (tvViewModel.getTV().pid != "") {
-                        Log.i(TAG, "request $title")
-                        lifecycleScope.launch(Dispatchers.IO) {
-                            tvViewModel.let { Request.fetchData(it) }
-                        }
-                        (activity as? MainActivity)?.showInfoFragment(tvViewModel)
-                        setSelectedPosition(
-                            tvViewModel.getRowPosition(), true,
-                            SelectItemViewHolderTask(tvViewModel.getItemPosition())
-                        )
-                    } else {
-                        if (check(tvViewModel)) {
-                            (activity as? MainActivity)?.play(tvViewModel)
+                tvViewModel.ready.observe(viewLifecycleOwner) { _ ->
+
+                    // not first time && channel not change
+                    if (tvViewModel.ready.value != null
+                        && tvViewModel.getTV().id == itemPosition
+                        && check(tvViewModel)
+                    ) {
+                        Log.i(TAG, "ready ${tvViewModel.getTV().title}")
+                        (activity as? MainActivity)?.play(tvViewModel)
+                    }
+                }
+                tvViewModel.change.observe(viewLifecycleOwner) { _ ->
+                    if (tvViewModel.change.value != null) {
+                        val title = tvViewModel.getTV().title
+                        Log.i(TAG, "switch $title")
+                        if (tvViewModel.getTV().pid != "") {
+                            Log.i(TAG, "request $title")
+                            lifecycleScope.launch(Dispatchers.IO) {
+                                tvViewModel.let { Request.fetchData(it) }
+                            }
                             (activity as? MainActivity)?.showInfoFragment(tvViewModel)
                             setSelectedPosition(
                                 tvViewModel.getRowPosition(), true,
                                 SelectItemViewHolderTask(tvViewModel.getItemPosition())
                             )
+                        } else {
+                            if (check(tvViewModel)) {
+                                (activity as? MainActivity)?.play(tvViewModel)
+                                (activity as? MainActivity)?.showInfoFragment(tvViewModel)
+                                setSelectedPosition(
+                                    tvViewModel.getRowPosition(), true,
+                                    SelectItemViewHolderTask(tvViewModel.getItemPosition())
+                                )
+                            }
                         }
                     }
                 }
             }
+            Log.i(TAG, "observe tvListViewModel success")
+        } catch (e: Exception) {
+            Log.e(TAG, "observe tvListViewModel error: ${e.message}", e)
         }
 
-        (activity as MainActivity).fragmentReady("MainFragment")
+        Log.i(TAG, "call fragmentReady")
+        try {
+            (activity as MainActivity).fragmentReady("MainFragment")
+            Log.i(TAG, "fragmentReady success")
+        } catch (e: Exception) {
+            Log.e(TAG, "fragmentReady error: ${e.message}", e)
+        }
+
+        Log.i(TAG, "onActivityCreated end")
     }
 
     fun toLastPosition() {
@@ -148,7 +184,7 @@ class MainFragment : BrowseSupportFragment() {
     private fun loadRows() {
         rowsAdapter = ArrayObjectAdapter(ListRowPresenter())
 
-        val cardPresenter = CardPresenter(context!!)
+        val cardPresenter = CardPresenter(requireContext())
 
         var idx: Long = 0
         for ((k, v) in TVList.list) {

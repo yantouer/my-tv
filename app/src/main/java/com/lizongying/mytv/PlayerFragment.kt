@@ -17,7 +17,6 @@ import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
-import com.google.android.exoplayer2.SimpleExoPlayer
 import com.lizongying.mytv.databinding.PlayerBinding
 import com.lizongying.mytv.models.TVViewModel
 
@@ -32,7 +31,7 @@ class PlayerFragment : Fragment(), SurfaceHolder.Callback {
 
     private lateinit var surfaceView: SurfaceView
     private lateinit var surfaceHolder: SurfaceHolder
-    private var exoPlayer: SimpleExoPlayer? = null
+    private var exoPlayer: ExoPlayer? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -61,7 +60,7 @@ class PlayerFragment : Fragment(), SurfaceHolder.Callback {
                 playerView!!.player?.playWhenReady = true
                 playerView!!.player?.addListener(object : Player.Listener {
                     override fun onVideoSizeChanged(videoSize: VideoSize) {
-                        val ratio = playerView?.measuredWidth?.div(playerView?.measuredHeight!!)
+                        val ratio = playerView?.measuredWidth?.div(playerView?.measuredHeight!!.toFloat())
                         if (ratio != null) {
                             val layoutParams = playerView?.layoutParams
                             if (ratio < aspectRatio) {
@@ -78,7 +77,6 @@ class PlayerFragment : Fragment(), SurfaceHolder.Callback {
 
                     override fun onPlayerError(error: PlaybackException) {
                         super.onPlayerError(error)
-
                         Log.e(TAG, "PlaybackException $error")
                         tvViewModel?.changed()
                     }
@@ -104,7 +102,7 @@ class PlayerFragment : Fragment(), SurfaceHolder.Callback {
             prepare()
         }
         exoPlayer?.run {
-            setMediaItem(com.google.android.exoplayer2.MediaItem.fromUri(tvViewModel.getVideoUrlCurrent()))
+            setMediaItem(MediaItem.fromUri(tvViewModel.getVideoUrlCurrent()))
             prepare()
         }
     }
@@ -157,7 +155,7 @@ class PlayerFragment : Fragment(), SurfaceHolder.Callback {
     }
 
     override fun surfaceCreated(holder: SurfaceHolder) {
-        exoPlayer = SimpleExoPlayer.Builder(requireContext()).build()
+        exoPlayer = ExoPlayer.Builder(requireContext()).build()
         exoPlayer?.setVideoSurfaceHolder(surfaceHolder)
         exoPlayer?.playWhenReady = true
     }
