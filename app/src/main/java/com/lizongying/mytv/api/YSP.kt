@@ -57,7 +57,7 @@ object YSP {
     private var encryptor = Encryptor()
 
     fun init(context: Context) {
-        encryptor.init(context)
+        encryptor.safeInit(context)
         guid = getGuid()
     }
 

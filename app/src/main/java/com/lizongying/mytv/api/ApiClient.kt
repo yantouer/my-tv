@@ -7,11 +7,13 @@ import com.lizongying.mytv.jce.JceConverterFactory
 import okhttp3.ConnectionSpec
 import okhttp3.OkHttpClient
 import okhttp3.TlsVersion
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.converter.protobuf.ProtoConverterFactory
 import java.net.InetSocketAddress
 import java.net.Proxy
+import java.util.concurrent.TimeUnit
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
@@ -101,7 +103,7 @@ class ApiClient {
             .build().create(FAuthService::class.java)
     }
 
-    private fun enableTls12OnPreLollipop(client: OkHttpClient.Builder): OkHttpClient.Builder {
+    private fun enableTls12OnPreLollipop(client: OkHttpClient.Builder, trustAllCerts: Array<TrustManager>): OkHttpClient.Builder {
         if (Build.VERSION.SDK_INT >= 16 && Build.VERSION.SDK_INT < 22) {
             try {
                 val sc = SSLContext.getInstance("TLSv1.2")
@@ -111,7 +113,7 @@ class ApiClient {
                 // a more robust version is to pass a custom X509TrustManager
                 // as the second parameter and make checkServerTrusted to accept your server.
                 // Credits: https://github.com/square/okhttp/issues/2372#issuecomment-1774955225
-                client.sslSocketFactory(Tls12SocketFactory(sc.socketFactory))
+                client.sslSocketFactory(Tls12SocketFactory(sc.socketFactory), trustAllCerts[0] as X509TrustManager)
 
                 val cs = ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS)
                     .tlsVersions(TlsVersion.TLS_1_2)
@@ -159,12 +161,37 @@ class ApiClient {
             val proxy = Proxy(Proxy.Type.HTTP, InetSocketAddress("10.0.2.2", 8888))
 
             val builder = OkHttpClient.Builder()
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .writeTimeout(30, TimeUnit.SECONDS)
+                .addInterceptor(HttpLoggingInterceptor().apply {
+                    level = HttpLoggingInterceptor.Level.BASIC
+                })
+                .addInterceptor {
+                    val request = it.request()
+                    val response = it.proceed(request)
+                    if (!response.isSuccessful) {
+                        // 实现简单的重试逻辑
+                        for (i in 1..3) {
+                            try {
+                                Thread.sleep(1000L * i)
+                                val retryResponse = it.proceed(request)
+                                if (retryResponse.isSuccessful) {
+                                    return@addInterceptor retryResponse
+                                }
+                            } catch (e: Exception) {
+                                Log.e("ApiClient", "Retry failed", e)
+                            }
+                        }
+                    }
+                    response
+                }
                 .sslSocketFactory(sslContext.socketFactory, trustAllCerts[0] as X509TrustManager)
                 .hostnameVerifier { _, _ -> true }
 //                .proxy(proxy)
                 .dns(DnsCache())
 
-            return enableTls12OnPreLollipop(builder).build()
+            return enableTls12OnPreLollipop(builder, trustAllCerts).build()
 
         } catch (e: Exception) {
             throw RuntimeException(e)

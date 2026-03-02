@@ -60,7 +60,7 @@ static def VersionCode() {
         println("VersionCode $versionCode")
         return versionCode
     } catch (ignored) {
-        return 0
+        return 1
     }
 }
 
@@ -98,4 +98,5 @@ dependencies {
 
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2"
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
+    implementation "com.squareup.okhttp3:logging-interceptor:4.12.0"
 }

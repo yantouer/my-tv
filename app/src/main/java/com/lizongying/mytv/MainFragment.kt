@@ -183,7 +183,54 @@ class MainFragment : BrowseSupportFragment() {
 
     private fun loadRows() {
         rowsAdapter = ArrayObjectAdapter(ListRowPresenter())
-
+        adapter = rowsAdapter
+        
+        // 从网络加载直播源
+        lifecycleScope.launch(Dispatchers.Main) {
+            try {
+                val liveSourceUrl = "https://gt.ifree.fun/https://raw.githubusercontent.com/yantouer/IPTVzidong/refs/heads/main/live.txt"
+                val liveSources = LiveSourceManager.loadLiveSources(liveSourceUrl)
+                
+                if (liveSources.isNotEmpty()) {
+                    val cardPresenter = CardPresenter(requireContext())
+                    var idx: Long = 0
+                    
+                    for ((k, v) in liveSources) {
+                        val listRowAdapter = ArrayObjectAdapter(cardPresenter)
+                        for ((idx2, v1) in v.withIndex()) {
+                            val tvViewModel = TVViewModel(v1)
+                            tvViewModel.setRowPosition(idx.toInt())
+                            tvViewModel.setItemPosition(idx2)
+                            tvListViewModel.addTVViewModel(tvViewModel)
+                            listRowAdapter.add(tvViewModel)
+                        }
+                        tvListViewModel.maxNum.add(v.size)
+                        val header = HeaderItem(idx, k)
+                        rowsAdapter!!.add(ListRow(header, listRowAdapter))
+                        idx++
+                    }
+                    
+                    itemPosition = SP.itemPosition
+                    if (itemPosition >= tvListViewModel.size()) {
+                        itemPosition = 0
+                    }
+                    tvListViewModel.setItemPosition(itemPosition)
+                } else {
+                    // 加载失败，使用默认频道
+                    loadDefaultChannels()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to load live sources: ${e.message}", e)
+                // 加载失败，使用默认频道
+                loadDefaultChannels()
+            }
+        }
+    }
+    
+    /**
+     * 加载默认频道（当网络直播源加载失败时使用）
+     */
+    private fun loadDefaultChannels() {
         val cardPresenter = CardPresenter(requireContext())
 
         var idx: Long = 0
@@ -201,8 +248,6 @@ class MainFragment : BrowseSupportFragment() {
             rowsAdapter!!.add(ListRow(header, listRowAdapter))
             idx++
         }
-
-        adapter = rowsAdapter
 
         itemPosition = SP.itemPosition
         if (itemPosition >= tvListViewModel.size()) {
